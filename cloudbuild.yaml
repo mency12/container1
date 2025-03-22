@@ -3,21 +3,21 @@ steps:
   - name: 'maven:3.8-openjdk-11'
     entrypoint: 'mvn'
     args: ['package', '-DskipTests']
-
+  
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}', '.']
-
+  
   # Push the container image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}']
-
+  
   # Update deployment to use the new image
   - name: 'gcr.io/cloud-builders/kubectl'
     args:
       - 'set'
       - 'image'
-      - 'deployment/container1-deployment'
+      - 'deployment/combined-deployment'
       - 'container1=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}'
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=${_ZONE}'
