@@ -1,0 +1,33 @@
+steps:
+  # Build the Maven project
+  - name: 'maven:3.8-openjdk-11'
+    entrypoint: 'mvn'
+    args: ['package', '-DskipTests']
+
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}', '.']
+
+  # Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}']
+
+  # Update deployment to use the new image
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/container1-deployment'
+      - 'container1=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: kubernetes-assignment
+  _ZONE: us-central1-a
+  _CLUSTER_NAME: my-gke-cluster
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/container1:${SHORT_SHA}'
